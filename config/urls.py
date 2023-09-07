@@ -17,6 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from apps.authentication.views import UserLoginView, RefreshTokenView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/login/', UserLoginView.as_view(), name='user-login'),
+    path('api/refresh-token/', RefreshTokenView.as_view(), name='refresh-token'),
 ]
