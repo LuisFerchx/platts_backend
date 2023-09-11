@@ -4,7 +4,7 @@ from django.db import models
 
 # Create your models here.
 class User(AbstractUser):
-    code = models.BigIntegerField()
+    code = models.CharField(null=True, blank=True)
     identification = models.CharField(max_length=20, null=True)
     birth_date = models.DateField(null=True, blank=True)
     phone = models.CharField(max_length=15, blank=True, null=True)

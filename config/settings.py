@@ -86,7 +86,7 @@ DATABASES = {
         "POSTGRES_USER": "platts_user",
         "PASSWORD": "platts_password",
         "POSTGRES_PASSWORD": "platts_password",
-        "HOST": "localhost",  # 192.168.56.101 for development
+        "HOST": "192.168.56.101",  # 192.168.56.101 for development
         "PORT": "5432",
     },
 }
