@@ -17,11 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, re_path, include
 
-from apps.authentication.views import UserLoginView, RefreshTokenView
+from apps.authentication.views import UserLoginView, RefreshTokenView, UserLogoutView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     re_path(r"api/", include("apps.authentication.urls")),
     path('api/login/', UserLoginView.as_view(), name='user-login'),
+    path('api/logout/', UserLogoutView.as_view(), name='user-logout'),
     path('api/refresh-token/', RefreshTokenView.as_view(), name='refresh-token'),
 ]

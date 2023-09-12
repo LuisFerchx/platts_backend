@@ -1,7 +1,7 @@
 import traceback
 from datetime import timedelta
 
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, logout
 from django.db import transaction
 from rest_framework import viewsets, status
 from rest_framework.generics import GenericAPIView
@@ -62,6 +62,18 @@ class RefreshTokenView(GenericAPIView):
 
         except Exception as e:
             return Response({'error': 'Invalid refresh token. ', 'details': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserLogoutView(APIView):
+    def post(self, request):
+        try:
+            logout(request)
+            return Response(
+                global_utils.response_data(message="Logout Success"),
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserProfile_ViewSet(viewsets.ViewSet):
@@ -176,7 +188,6 @@ class UserProfile_ViewSet(viewsets.ViewSet):
                     flag = True
                 raise Exception(flag)
         except Exception as e:
-            print(e)
             if str(e) == 'False':
                 obj_user = User.objects.get(code=pk, state=1)
                 obj_user.state = 0
@@ -188,3 +199,33 @@ class UserProfile_ViewSet(viewsets.ViewSet):
                 traceback.print_exc()
                 return Response(global_utils.response_data('Error when delete: ' + str(e)),
                                 status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserSession_ViewSet(viewsets.ViewSet):
+    queryset = User.objects.none()
+
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        try:
+            data = request.data
+
+            json_data = {
+                "user_code": request.user.code,
+                "username": request.user.username,
+                "first_name": request.user.first_name,
+                "last_name": request.user.last_name,
+                "email": request.user.email,
+                "last_login": request.user.last_login,
+                "is_admin": request.user.is_superuser
+            }
+
+            return Response(
+                global_utils.response_data(data=json_data),
+                status=status.HTTP_201_CREATED
+            )
+        except Exception as e:
+            return Response(
+                global_utils.response_data(message='Error when get user session', data=str(e)),
+                status=status.HTTP_400_BAD_REQUEST
+            )
