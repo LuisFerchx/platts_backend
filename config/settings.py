@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",  # agregados para jwt
     "rest_framework_simplejwt.token_blacklist",  # agregados para jwt
     'apps.authentication',
+    'apps.projects',
 ]
 
 MIDDLEWARE = [
