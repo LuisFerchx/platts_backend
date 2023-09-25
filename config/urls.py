@@ -22,6 +22,7 @@ from apps.authentication.views import UserLoginView, RefreshTokenView, UserLogou
 urlpatterns = [
     path('admin/', admin.site.urls),
     re_path(r"api/", include("apps.authentication.urls")),
+    re_path(r"api/", include("apps.projects.urls")),
     path('api/login/', UserLoginView.as_view(), name='user-login'),
     path('api/logout/', UserLogoutView.as_view(), name='user-logout'),
     path('api/refresh-token/', RefreshTokenView.as_view(), name='refresh-token'),
