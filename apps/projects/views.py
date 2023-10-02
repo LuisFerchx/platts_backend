@@ -6,7 +6,9 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.projects.models import Project, TypeInvestment
+from apps.authentication.models import User
+from apps.projects.models import Project, TypeInvestment, UserProject
+from apps.projects.serializers import UserProjectDetails_serializer
 from utils import global_utils
 from utils.encryption_util import EncryptDES
 from utils.vars import HttpMessages
@@ -22,7 +24,8 @@ class Project_ViewSet(viewsets.ViewSet):
 
     def list(self, request):
         try:
-            obj_proj = Project.objects.filter(state=1).values('code', 'name', 'dir_real_state', 'type_investment__name')
+            obj_proj = Project.objects.filter(state=1).values('code', 'name', 'dir_real_state', 'total_cost',
+                                                              'type_investment__name')
             return Response(
                 global_utils.response_data(data={"projects": obj_proj}),
                 status=status.HTTP_200_OK
@@ -41,6 +44,7 @@ class Project_ViewSet(viewsets.ViewSet):
                 obj_project = Project()
                 obj_project.name = data.get('name')
                 obj_project.dir_real_state = data.get('dir_real_state')
+                obj_project.total_cost = data.get('total_cost')
                 obj_project.type_investment_id = TypeInvestment.objects.get(
                     pk=_e.decrypt(data.get('type_investment_code'))).pk
                 obj_project.save()
@@ -66,6 +70,7 @@ class Project_ViewSet(viewsets.ViewSet):
                 obj_proj = Project.objects.get(code=pk, state=1)
                 obj_proj.name = data.get('name')
                 obj_proj.dir_real_state = data.get('dir_real_state')
+                obj_proj.total_cost = data.get('total_cost')
                 obj_proj.type_investment_id = TypeInvestment.objects.get(
                     pk=_e.decrypt(data.get('type_investment_code'))).pk
                 obj_proj.save()
@@ -90,6 +95,7 @@ class Project_ViewSet(viewsets.ViewSet):
                 "name": obj_proj.name,
                 "code": obj_proj.code,
                 "dir_real_state": obj_proj.dir_real_state,
+                "total_cost": obj_proj.total_cost,
                 "type_investment": obj_proj.type_investment.name
             }
 
@@ -237,3 +243,83 @@ class TypeInvestment_ViewSet(viewsets.ViewSet):
                 traceback.print_exc()
                 return Response(global_utils.response_data(HttpMessages.delete_error + ': ' + str(e)),
                                 status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProjectUser_ViewSet(viewsets.ViewSet):
+    queryset = Project.objects.none()
+
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        try:
+            data = request.data
+            # Para el administrador
+            with transaction.atomic():
+                obj = UserProject()
+                obj.user_id = User.objects.get(code=data.get('user_code'), state=1).pk
+                obj.project_id = Project.objects.get(code=data.get('project_code')).pk
+                obj.pct_participation = data.get('pct_participation')
+                obj.save()
+
+                return Response(
+                    global_utils.response_data(data={
+                        "client_projects": UserProject.objects.filter(user_id=obj.user_id, state=1).values(
+                            'project__code',
+                            'project__name')},
+                        message="Project add to Client"),
+                    status=status.HTTP_201_CREATED
+                )
+        except Exception as e:
+            return Response(
+                global_utils.response_data(message=HttpMessages.error_created, data=str(e)),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def list(self, request):
+        data = request.GET
+        try:
+            obj = UserProject.objects.filter(state=1)
+            if data.get('user_code'):
+                user = User.objects.get(code=data.get('user_code'), state=1)
+                obj = UserProject.objects.filter(user_id=user.pk)
+
+            return Response(
+                global_utils.response_data(data=UserProjectDetails_serializer(obj, many=True).data,
+                                           message="Details"),
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            return Response(
+                global_utils.response_data(message=HttpMessages.list_error, data=str(e)),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+# class ProjectUserDelete_ViewSet(viewsets.ViewSet):
+#     queryset = Project.objects.none()
+#
+#     permission_classes = [IsAuthenticated]
+#
+#     def create(self, request):
+#         try:
+#             data = request.data
+#             # Para el administrador
+#             with transaction.atomic():
+#                 obj = UserProject()
+#                 obj.user_id = User.objects.get(code=data.get('user_code')).pk
+#                 obj.project_id = Project.objects.get(code=data.get('project_code')).pk
+#                 obj.pct_participation = data.get('pct_participation')
+#                 obj.save()
+#
+#                 return Response(
+#                     global_utils.response_data(data={
+#                         "client_projects": UserProject.objects.filter(user_id=obj.user_id).values('project__code',
+#                                                                                                   'project__name')},
+#                         message="Project add to Client"),
+#                     status=status.HTTP_201_CREATED
+#                 )
+#         except Exception as e:
+#             return Response(
+#                 global_utils.response_data(message=HttpMessages.error_created, data=str(e)),
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
